@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Sobre</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root{--g1:#f5d76e;--g2:#d4af37;--g3:#fff2b2;}
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Courier New", monospace;}
+body{background:black;height:100vh;overflow:hidden;}
+.fade-in{opacity:0;animation:fadeIn 2.5s ease forwards;}
+@keyframes fadeIn{to{opacity:1;}}
+canvas{position:fixed;inset:0;z-index:0;}
+.container{position:relative;z-index:1;height:100vh;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
+.gradient{background:linear-gradient(120deg,var(--g1),var(--g2),var(--g3),var(--g2));background-size:300% 300%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:gradientMove 6s ease infinite;text-shadow:0 0 18px rgba(245,215,110,.35);}
+@keyframes gradientMove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+h1{font-size:4rem;letter-spacing:12px;margin-bottom:30px;}
+.members{display:flex;flex-direction:column;gap:6px;margin-bottom:35px;}
+.member{font-size:1.05rem;letter-spacing:3px;opacity:0;transform:translateY(8px);animation:memberIn .8s ease forwards;}
+@keyframes memberIn{to{opacity:1;transform:translateY(0);}}
+.phrase{min-height:24px;margin-bottom:40px;font-size:1rem;letter-spacing:1.5px;}
+.seal{font-size:.8rem;letter-spacing:2px;opacity:.9;animation:sealGlow 3s infinite alternate;}
+@keyframes sealGlow{from{text-shadow:0 0 6px rgba(245,215,110,.3)}to{text-shadow:0 0 18px rgba(245,215,110,.8)}}
+.click-hint{position:fixed;bottom:12px;width:100%;text-align:center;font-size:.7rem;opacity:.5;}
+.menu-btn{position:fixed;top:20px;right:20px;z-index:3;background:rgba(212,175,55,0.1);border:2px solid rgba(212,175,55,0.7);padding:8px 12px;cursor:pointer;color:var(--g2);font-weight:bold;font-size:.9rem;letter-spacing:1px;border-radius:4px;transition:all 0.3s ease;}
+.menu-btn:hover{background:rgba(212,175,55,0.3);color:#fff;box-shadow:0 0 10px rgba(245,215,110,0.7);}
+.side-menu{position:fixed;top:0;right:-250px;width:250px;height:100%;background:rgba(0,0,0,0.95);border-left:2px solid var(--g2);padding:20px;z-index:2;display:flex;flex-direction:column;gap:15px;transition:right 0.4s ease;}
+.side-menu.active{right:0;}
+.side-menu a{color:var(--g2);text-decoration:none;font-size:1rem;letter-spacing:1px;opacity:0;transform:translateX(20px);animation:menuLinkIn 0.5s forwards;}
+.side-menu a:hover{color:#fff;text-shadow:0 0 8px rgba(245,215,110,0.7);}
+@keyframes menuLinkIn{to{opacity:1;transform:translateX(0);}}
+</style>
+</head>
+<body>
+
+<canvas id="matrix"></canvas>
+
+<div class="container fade-in">
+<h1 class="gradient">Sobre</h1>
+
+<div class="phrase gradient" id="phrase"></div>
+<div class="seal gradient">AK7</div>
+</div>
+
+<div class="click-hint">clique para ativar o som</div>
+<div class="menu-btn">MENU</div>
+
+<div class="side-menu" id="sideMenu">
+    <a href="index.html" style="animation-delay:0.1s">Início</a>
+    <a href="membros.html" style="animation-delay:0.25s">Membros</a>
+    <a href="sobre.html" style="animation-delay:0.4s">Sobre</a>
+    <a href="contato.html" style="animation-delay:0.55s">Contato</a>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const canvas=document.getElementById("matrix"),ctx=canvas.getContext("2d");
+  function resize(){canvas.width=innerWidth;canvas.height=innerHeight;}
+  resize(); addEventListener("resize",resize);
+  const chars="AK7010101CODE",fs=16;
+  let cols=Math.floor(canvas.width/fs);
+  let drops=Array.from({length:cols},()=>Math.random()*canvas.height);
+  setInterval(()=>{
+    ctx.fillStyle="rgba(0,0,0,.08)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle="#d4af37";
+    ctx.font=fs+"px monospace";
+    for(let i=0;i<drops.length;i++){
+      const c=chars[Math.floor(Math.random()*chars.length)];
+      ctx.fillText(c,i*fs,drops[i]*fs);
+      if(drops[i]*fs>canvas.height && Math.random()>.97) drops[i]=0;
+      drops[i]++;
+    }
+  },35);
+
+  let fraseText = "Conheça a essência da AK7.";
+  const phraseEl=document.getElementById("phrase");
+  let p=0;
+  (function type(){if(p<fraseText.length){phraseEl.textContent+=fraseText[p++];setTimeout(type,60);}})();
+
+  let audioStarted=false;
+  document.body.addEventListener("click", ()=>{
+    if(audioStarted) return; audioStarted=true;
+    const AudioCtx=window.AudioContext||window.webkitAudioContext,audioCtx=new AudioCtx(),osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+    osc.type="sine"; osc.frequency.value=120; gain.gain.value=0.0001;
+    osc.connect(gain).connect(audioCtx.destination); osc.start();
+    gain.gain.linearRampToValueAtTime(0.02,audioCtx.currentTime+3);
+    gain.gain.linearRampToValueAtTime(0.0001,audioCtx.currentTime+10);
+    const hint=document.querySelector(".click-hint"); if(hint) hint.remove();
+  });
+
+  const menuBtn=document.querySelector(".menu-btn"),sideMenu=document.getElementById("sideMenu");
+  menuBtn.addEventListener("click", ()=>{
+    sideMenu.classList.toggle("active");
+    const links=sideMenu.querySelectorAll("a");
+    links.forEach((link,index)=>{link.style.animation="none"; link.offsetHeight; link.style.animation=`menuLinkIn 0.5s forwards ${0.1+index*0.15}s`;});
+  });
+});
+</script>
+
+</body>
+</html>
